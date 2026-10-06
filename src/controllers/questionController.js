@@ -1,5 +1,12 @@
-import { getAllQuestionsService, getQuestionByIdService, createQuestionService, updateQuestionService, deleteQuestionService } from '../services/questionService.js';
-import { createAppError } from "../utils/createAppError.js";
+import {
+  getAllQuestionsService,
+  getQuestionByIdService,
+  createQuestionService,
+  updateQuestionService,
+  deleteQuestionService,
+  upvoteQuestionService,
+  downvoteQuestionService,
+} from '../services/questionService.js';
 
 export const getAllQuestions = async (req, res) => {
     const questionsWithCount = await getAllQuestionsService();
@@ -12,9 +19,8 @@ export const getAllQuestions = async (req, res) => {
 };
 
 export const getQuestionById = async (req, res) => {
-    const { questionId } = req.params;
-    console.log("questionId = ", req);
-    const questionWithAnswers = await getQuestionByIdService(questionId);
+  const { id } = req.params;
+  const questionWithAnswers = await getQuestionByIdService(id);
 
     res.status(200).json({
         success: true,
@@ -25,11 +31,8 @@ export const getQuestionById = async (req, res) => {
 
 // POST /api/questions
 export const createQuestion = async (req, res) => {
-  const { title, description, tags, author } = req.body;
-
-  if(!title || !description || !tags || !author) {
-    throw createAppError("Title, description, tags, and author are required.", 400);
-  }
+  const { title, description, tags } = req.body;
+  const author = req.user.id;
 
   const populatedQuestion = await createQuestionService(
     title,
@@ -46,19 +49,15 @@ export const createQuestion = async (req, res) => {
 
 // PUT /api/questions/:id
 export const updateQuestion = async (req, res) => {
-  const { questionId } = req.params;
-  const { title, description, tags, loggedInUser } = req.body;
-
-  if(!title || !description || !tags || !loggedInUser) {
-    throw createAppError("Title, description, tags, and loggedInUser are required.", 400);
-  }
+  const { id } = req.params;
+  const { title, description, tags } = req.body;
 
   const updatedQuestion = await updateQuestionService(
-    questionId,
+    id,
     title,
     description,
     tags,
-    loggedInUser
+    req.user
   );
   res.status(200).json({
     success: true,
@@ -69,20 +68,37 @@ export const updateQuestion = async (req, res) => {
 
 // DELETE /api/questions/:id
 export const deleteQuestion = async (req, res) => {
-  const { questionId } = req.params;
-  const { loggedInUser } = req.body;
-
-  if(!loggedInUser) {
-    throw createAppError("LoggedInUser is required.", 400);
-  }
+  const { id } = req.params;
 
   const deletedQuestion = await deleteQuestionService(
-    questionId,
-    loggedInUser
+    id,
+    req.user
   );
   res.status(200).json({
     success: true,
     message: "Question deleted successfully",
     data: deletedQuestion,
+  });
+};
+
+export const upvoteQuestion = async (req, res) => {
+  const { id } = req.params;
+  const question = await upvoteQuestionService(id, req.user.id);
+
+  res.status(200).json({
+    success: true,
+    message: "Question upvoted successfully",
+    data: question,
+  });
+};
+
+export const downvoteQuestion = async (req, res) => {
+  const { id } = req.params;
+  const question = await downvoteQuestionService(id, req.user.id);
+
+  res.status(200).json({
+    success: true,
+    message: "Question downvoted successfully",
+    data: question,
   });
 };
