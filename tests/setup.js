@@ -10,6 +10,9 @@ let mongoServer;
 beforeAll(async () => {
     // Increase timeout for slow MongoDB startup
     mongoServer = await MongoMemoryServer.create({
+        binary: {
+            version: '7.0.14',
+        },
         instance: {
             launchTimeout: 60000, // 60 seconds
         },
